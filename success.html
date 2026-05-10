@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmed | Nourish.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --bg: #0a0a0a;
+            --card-bg: #161616;
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1.5rem; }
+
+        .success-card {
+            background: var(--card-bg);
+            max-width: 450px; width: 100%;
+            padding: 3rem 2rem;
+            border-radius: 30px;
+            text-align: center;
+            border: 1px solid var(--border);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .check-icon {
+            width: 80px; height: 80px; background: rgba(16, 185, 129, 0.1);
+            color: var(--primary); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem; margin: 0 auto 1.5rem;
+        }
+
+        h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2.5rem; line-height: 1.5; }
+
+        .data-box {
+            background: #000; border-radius: 20px; padding: 1.5rem;
+            text-align: left; margin-bottom: 2rem; border: 1px solid var(--border);
+        }
+
+        .data-row { display: flex; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px solid var(--border); }
+        .data-row:last-child { border-bottom: none; }
+        .label { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+        .value { font-weight: 700; font-size: 0.95rem; }
+
+        .btn {
+            display: block; width: 100%; background: var(--text-main); color: #000;
+            padding: 1.2rem; border-radius: 15px; text-decoration: none;
+            font-weight: 800; transition: 0.3s; margin-top: 1rem;
+        }
+        .btn:hover { background: var(--primary); transform: translateY(-3px); }
+    </style>
+</head>
+<body>
+
+<div class="success-card">
+    <div class="check-icon">✓</div>
+    <h1>Order Confirmed!</h1>
+    <p class="subtitle">Your journey to a healthier you has officially started.</p>
+
+    <div class="data-box">
+        <div class="data-row">
+            <span class="label">Order Number</span>
+            <span class="value" id="orderNo">Loading...</span>
+        </div>
+        <div class="data-row">
+            <span class="label">Delivery Area</span>
+            <span class="value" id="deliveryArea">Loading...</span>
+        </div>
+        <div class="data-row">
+            <span class="label">Est. Delivery</span>
+            <span class="value" id="estTime">Today, 12:45 PM</span>
+        </div>
+    </div>
+
+    <a href="index.html" class="btn">Back to Menu</a>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// 1. Firebase Config
+const firebaseConfig = {
+    apiKey: "AIzaSyDXKfriOdq5GS5Zhrl5hLuLXgimTInYsGE",
+    authDomain: "nourishng-bd7f0.firebaseapp.com",
+    projectId: "nourishng-bd7f0",
+    storageBucket: "nourishng-bd7f0.firebasestorage.app",
+    messagingSenderId: "942159491218",
+    appId: "1:942159491218:web:fea17421d2dacae73ff64b"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// 2. Fetch the Most Recent Order
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        try {
+            // Find the latest order for this user
+            const q = query(
+                collection(db, "orders"),
+                where("userId", "==", user.uid),
+                orderBy("createdAt", "desc"),
+                limit(1)
+            );
+
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+                const orderDoc = querySnapshot.docs[0];
+                const orderData = orderDoc.data();
+
+                // 3. Update the UI with real data
+                document.getElementById('orderNo').innerText = "#NG-" + orderDoc.id.slice(0, 5).toUpperCase();
+                
+                // We show the address or you can add a 'neighborhood' field to your checkout save
+                document.getElementById('deliveryArea').innerText = orderData.customerName.split(' ')[0] + "'s Home"; 
+                
+                console.log("Success! Data pulled for order:", orderDoc.id);
+            }
+        } catch (e) {
+            console.error("Error fetching order:", e);
+        }
+    }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | Nourish.</title>
+    
+    <meta name="theme-color" content="#0a0a0a">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://checkout.flutterwave.com/v3.js"></script>
+
+    <style>
+        :root {
+            --primary: #10b981;
+            --bg: #0a0a0a;
+            --card-bg: #161616;
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); line-height: 1.6; }
+
+        .container { max-width: 1100px; margin: auto; padding: 1.5rem; }
+        
+        .header { margin-bottom: 3rem; text-align: center; padding-top: 2rem; }
+        .logo { color: var(--primary); font-weight: 800; font-size: 1.8rem; letter-spacing: -1px; margin-bottom: 0.5rem; }
+        .stepper { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+
+        .checkout-grid { display: grid; gap: 2rem; }
+        @media (min-width: 1024px) { .checkout-grid { grid-template-columns: 1.5fr 1fr; } }
+
+        .card { background: var(--card-bg); border-radius: 20px; padding: 2rem; border: 1px solid var(--border); margin-bottom: 1.5rem; }
+        .card-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; color: var(--primary); }
+
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.6rem; color: var(--text-muted); text-transform: uppercase; }
+        input, select {
+            width: 100%; padding: 1rem; border-radius: 12px; border: 1px solid var(--border);
+            background: #222; color: white; font-size: 1rem; transition: 0.3s;
+        }
+        input:focus { outline: none; border-color: var(--primary); }
+
+        .summary-item { display: flex; justify-content: space-between; padding: 0.8rem 0; font-size: 0.95rem; border-bottom: 1px solid var(--border); }
+        .total-row { display: flex; justify-content: space-between; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid var(--primary); font-weight: 800; font-size: 1.4rem; }
+
+        .submit-btn {
+            width: 100%; background: var(--primary); color: #000; border: none;
+            padding: 1.2rem; border-radius: 15px; font-weight: 800; font-size: 1.1rem;
+            cursor: pointer; transition: 0.3s; margin-top: 1.5rem;
+        }
+        .submit-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3); }
+        .secure-tag { text-align: center; font-size: 0.7rem; color: var(--text-muted); margin-top: 1.2rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="header">
+        <h1 class="logo">Nourish.</h1>
+        <p class="stepper">Plan &middot; Delivery &middot; <span style="color:var(--primary)">Payment</span></p>
+    </header>
+
+    <div class="checkout-grid">
+        <div class="checkout-forms">
+            <div class="card">
+                <h2 class="card-title">📍 Delivery Details</h2>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="custName" placeholder="Tunde Johnson">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="custPhone" placeholder="0801 234 5678">
+                </div>
+                <div class="form-group">
+                    <label>Lagos Neighborhood</label>
+                    <select id="locationSelect">
+                        <option value="2500">Lekki Phase 1 (₦2,500)</option>
+                        <option value="3500">Ikeja GRA (₦3,500)</option>
+                        <option value="2000">Yaba / Sabo (₦2,000)</option>
+                        <option value="2200">Surulere (₦2,200)</option>
+                        <option value="3000">Magodo (₦3,000)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Exact Delivery Address</label>
+                    <input type="text" id="custAddress" placeholder="Apt, Suite, House No.">
+                </div>
+            </div>
+        </div>
+
+        <div class="checkout-summary">
+            <div class="card" style="position: sticky; top: 120px;">
+                <h2 class="card-title">🧾 Order Summary</h2>
+                <div id="summaryItems"></div>
+                <div class="summary-item" style="margin-top: 1rem; border-top: 1px solid var(--border);">
+                    <span>Delivery Fee</span>
+                    <span id="deliveryDisplay">₦2,500</span>
+                </div>
+                <div class="total-row">
+                    <span>Total</span>
+                    <span id="grandTotalDisplay">₦0</span>
+                </div>
+                <button class="submit-btn" id="finishBtn">Complete Order</button>
+                <p class="secure-tag">🔒 SECURED BY FLUTTERWAVE</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDXKfriOdq5GS5Zhrl5hLuLXgimTInYsGE",
+    authDomain: "nourishng-bd7f0.firebaseapp.com",
+    projectId: "nourishng-bd7f0",
+    storageBucket: "nourishng-bd7f0.firebasestorage.app",
+    messagingSenderId: "942159491218",
+    appId: "1:942159491218:web:fea17421d2dacae73ff64b",
+    measurementId: "G-V08MGPMKV5"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+let cart = [];
+const summaryContainer = document.getElementById('summaryItems');
+const locationSelect = document.getElementById('locationSelect');
+
+async function fetchCartFromCloud(uid) {
+    const cartRef = doc(db, "active_carts", uid);
+    const cartSnap = await getDoc(cartRef);
+    if (cartSnap.exists()) {
+        cart = cartSnap.data().items || [];
+        updateSummary();
+    }
+}
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        fetchCartFromCloud(user.uid);
+    } else {
+        window.location.href = 'login.html';
+    }
+});
+
+function updateSummary() {
+    if (cart.length === 0) {
+        summaryContainer.innerHTML = '<p style="color: var(--text-muted);">Tray is empty.</p>';
+        return 0;
+    }
+    summaryContainer.innerHTML = cart.map(item => `
+        <div class="summary-item">
+            <span>${item.title}</span>
+            <span style="font-weight: 600;">₦${item.price.toLocaleString()}</span>
+        </div>
+    `).join('');
+
+    const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+    const deliveryFee = parseInt(locationSelect.value);
+    const grandTotal = subtotal + deliveryFee;
+
+    document.getElementById('deliveryDisplay').innerText = `₦${deliveryFee.toLocaleString()}`;
+    document.getElementById('grandTotalDisplay').innerText = `₦${grandTotal.toLocaleString()}`;
+    return grandTotal;
+}
+
+// --- THE FLUTTERWAVE ENGINE ---
+window.payWithFlutterwave = function() {
+    const name = document.getElementById('custName').value;
+    const phone = document.getElementById('custPhone').value;
+    const address = document.getElementById('custAddress').value;
+
+    if (!name || !phone || !address) {
+        alert("Please complete the delivery details.");
+        return;
+    }
+
+    const finalTotal = updateSummary();
+    if (finalTotal <= 0) return alert("Your tray is empty!");
+
+    FlutterwaveCheckout({
+      public_key: "FLWPUBK_TEST-6c5a04eab30aa2f329a521a883d49360-X",
+      tx_ref: "nourish-" + Date.now(),
+      amount: finalTotal,
+      currency: "NGN",
+      payment_options: "card, banktransfer, ussd",
+      customer: {
+        email: currentUser.email,
+        phone_number: phone,
+        name: name,
+      },
+      customizations: {
+        title: "NourishNG",
+        description: "Payment for Meal Plan",
+      },
+      callback: function (data) {
+        saveOrderToFirebase(data.transaction_id, finalTotal);
+      },
+      onclose: function() {
+        console.log("Closed");
+      }
+    });
+};
+
+async function saveOrderToFirebase(ref, total) {
+    try {
+        const orderData = {
+            userId: currentUser.uid,
+            paymentRef: ref,
+            customerName: document.getElementById('custName').value,
+            customerPhone: document.getElementById('custPhone').value,
+            deliveryAddress: document.getElementById('custAddress').value,
+            items: cart,
+            totalPaid: total,
+            status: "Paid",
+            createdAt: serverTimestamp()
+        };
+
+        await addDoc(collection(db, "orders"), orderData);
+        await deleteDoc(doc(db, "active_carts", currentUser.uid));
+        window.location.href = 'success.html';
+    } catch (e) {
+        alert("Error saving: " + e.message);
+    }
+}
+
+locationSelect.addEventListener('change', updateSummary);
+document.getElementById('finishBtn').onclick = payWithFlutterwave;
+</script>
+
+</body>
+</html>

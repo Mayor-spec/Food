@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account | NourishNG</title>
+    <style>
+        /* --- CSS STYLES (Consistent Dark Cinematic Theme) --- */
+        :root {
+            --primary-green: #2ecc71;
+            --dark-bg: #0f0f0f;
+            --card-bg: #1a1a1a;
+            --text-gray: #b3b3b3;
+            --neon-glow: 0 0 10px rgba(46, 204, 113, 0.4);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-bg);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .signup-card {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            border: 1px solid #333;
+            margin: 20px;
+        }
+
+        h2 {
+            margin-bottom: 5px;
+            color: var(--primary-green);
+        }
+
+        .subtitle {
+            color: var(--text-gray);
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            background: #252525;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: white;
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: var(--neon-glow);
+        }
+
+        .signup-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-green);
+            border: none;
+            border-radius: 8px;
+            color: var(--dark-bg);
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 15px;
+        }
+
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+
+        .footer-links {
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        .footer-links a {
+            color: var(--primary-green);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="signup-card">
+        <h2>Join NourishNG</h2>
+        <p class="subtitle">Start your journey to better health today.</p>
+
+        <div class="input-group">
+            <label>Full Name</label>
+            <input type="text" id="nameInput" placeholder="Babatunde Moses">
+        </div>
+
+        <div class="input-group">
+            <label>Email Address</label>
+            <input type="email" id="emailInput" placeholder="moses@example.com">
+        </div>
+
+        <div class="input-group">
+            <label>Create Password</label>
+            <input type="password" id="passwordInput" placeholder="Min. 6 characters">
+        </div>
+
+        <button class="signup-btn" onclick="signUpUser()">Create Account</button>
+
+        <div class="footer-links">
+            Already have an account? <a href="login.html">Sign in</a>
+        </div>
+    </div>
+
+    <script type="module">
+        // 1. Import necessary Firebase tools
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // 2. Your specific Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDXKfriOdq5GS5Zhrl5hLuLXgimTInYsGE",
+            authDomain: "nourishng-bd7f0.firebaseapp.com",
+            projectId: "nourishng-bd7f0",
+            storageBucket: "nourishng-bd7f0.firebasestorage.app",
+            messagingSenderId: "942159491218",
+            appId: "1:942159491218:web:fea17421d2dacae73ff64b",
+            measurementId: "G-V08MGPMKV5"
+        };
+
+        // 3. Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // 4. The Registration Function
+        window.signUpUser = async function() {
+            const name = document.getElementById('nameInput').value;
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+
+            // Simple validation
+            if (!name || !email || !password) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            try {
+                // Step A: Create the user in Auth
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Step B: Create their profile in the Firestore Database
+                // This saves their name and email so we can say "Welcome, Moses" later
+                await setDoc(doc(db, "users", user.uid), {
+                    fullName: name,
+                    email: email,
+                    createdAt: new Date().toISOString(),
+                    role: "customer"
+                });
+
+                alert("Welcome to the community! Your account is ready.");
+                window.location.href = 'profile.html';
+
+            } catch (error) {
+                let message = "Could not create account.";
+                if (error.code === 'auth/email-already-in-use') message = "This email is already registered.";
+                if (error.code === 'auth/weak-password') message = "Password should be at least 6 characters.";
+                
+                alert(message);
+                console.error("Signup Error:", error.message);
+            }
+        };
+    </script>
+</body>
+</html>

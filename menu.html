@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu | Nourish.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --bg: #0a0a0a;
+            --card-bg: #161616;
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); padding-bottom: 120px; overflow-x: hidden; }
+
+        /* --- CINEMATIC NAVBAR --- */
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 1.2rem 1.5rem;
+        }
+
+        .nav-container {
+            max-width: 1200px; margin: auto;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 1.5rem; }
+        .logo { font-weight: 800; font-size: 1.4rem; letter-spacing: -1px; color: var(--primary); text-decoration: none; }
+        
+        .meal-counter { 
+            font-weight: 700; font-size: 0.8rem; 
+            background: rgba(16, 185, 129, 0.1); 
+            padding: 4px 12px; border-radius: 100px; color: var(--primary);
+        }
+
+        .nav-links { display: flex; gap: 2rem; align-items: center; }
+        .nav-link {
+            text-decoration: none; color: var(--text-muted);
+            font-size: 0.9rem; font-weight: 600; transition: 0.3s;
+        }
+        .nav-link:hover { color: var(--primary); }
+        .nav-link.active { color: var(--primary); font-weight: 800; }
+
+        /* --- CATEGORY SCROLLER --- */
+        .category-container {
+            max-width: 1200px; margin: auto; padding: 1.5rem; 
+            overflow-x: auto; display: flex; gap: 0.8rem; scrollbar-width: none;
+        }
+        .category-container::-webkit-scrollbar { display: none; }
+
+        .chip {
+            white-space: nowrap; padding: 0.6rem 1.4rem;
+            border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+            background: var(--glass); color: var(--text-muted);
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.3s;
+        }
+        .chip.active { background: var(--primary); color: #000; border-color: var(--primary); box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); }
+
+        /* --- MEAL GRID --- */
+        .main-layout { max-width: 1200px; margin: auto; padding: 0 1.5rem; }
+        .meal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+
+        .meal-card {
+            background: var(--card-bg); border-radius: 20px;
+            overflow: hidden; border: 1px solid var(--border);
+            transition: 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .meal-card:hover { transform: translateY(-10px); border-color: var(--primary); }
+
+        .card-img { width: 100%; height: 200px; object-fit: cover; filter: saturate(1.1); }
+        .card-body { padding: 1.5rem; }
+        .meal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .meal-stats { color: var(--primary); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-bottom: 0.8rem; letter-spacing: 1px; }
+
+        .card-footer { display: flex; justify-content: space-between; align-items: center; }
+        .price { font-weight: 800; font-size: 1.1rem; }
+
+        .add-btn {
+            background: #fff; color: #000; border: none;
+            padding: 0.6rem 1.2rem; border-radius: 10px;
+            font-weight: 700; cursor: pointer; transition: 0.3s;
+        }
+        .add-btn.added { background: var(--primary); color: #000; }
+
+        /* --- FLOATING CART --- */
+        .floating-cart {
+            position: fixed; bottom: 20px; left: 20px; right: 20px;
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 1.2rem 1.5rem; border-radius: 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            max-width: 500px; margin: 0 auto; z-index: 1000;
+        }
+
+        .review-btn {
+            background: var(--primary); color: #000; border: none;
+            padding: 0.8rem 1.8rem; border-radius: 14px;
+            font-weight: 800; cursor: pointer; transition: 0.3s;
+        }
+        .review-btn:hover { transform: scale(1.05); }
+
+        @media (max-width: 600px) {
+            .nav-links { gap: 1rem; }
+            .nav-link { font-size: 0.8rem; }
+            .meal-counter { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-left">
+            <a href="index.html" class="logo">Nourish.</a>
+            <div id="mealCounter" class="meal-counter">0/5 Meals </div>
+        </div>
+        <div class="nav-links">
+            <a href="menu.html" class="nav-link active">Menu</a>
+            <a href="order.html" class="nav-link">My Orders</a>
+            <a href="profile.html" class="nav-link">Profile</a>
+        </div>
+    </div>
+</nav>
+
+<div class="category-container" id="categoryScroller">
+    <button class="chip active" data-filter="all">All Dishes</button>
+    <button class="chip" data-filter="Weight Loss">Weight Loss</button>
+    <button class="chip" data-filter="Muscle Gain">Muscle Gain</button>
+    <button class="chip" data-filter="Keto">Keto</button>
+</div>
+
+<main class="main-layout">
+    <div class="meal-grid" id="mealGrid"></div>
+</main>
+
+<div class="floating-cart">
+    <div>
+        <p style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Current Total</p>
+        <p id="totalPriceDisplay" style="font-size: 1.3rem; font-weight: 800;">0</p>
+    </div>
+    <button class="review-btn" onclick="goToCheckout()">Review Order</button>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDXKfriOdq5GS5Zhrl5hLuLXgimTInYsGE",
+        authDomain: "nourishng-bd7f0.firebaseapp.com",
+        projectId: "nourishng-bd7f0",
+        storageBucket: "nourishng-bd7f0.firebasestorage.app",
+        messagingSenderId: "942159491218",
+        appId: "1:942159491218:web:fea17421d2dacae73ff64b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const meals = [
+        { id: 1, title: "Grilled Turkey & Yam", price: 5500, cat: "Muscle Gain", stats: "45g Protein", img: "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg" },
+        { id: 2, title: "Avocado Keto Salad", price: 4000, cat: "Keto", stats: "Low Carb", img: "https://images.pexels.com/photos/1213710/pexels-photo-1213710.jpeg" },
+        { id: 3, title: "Spicy Lean Beef", price: 6200, cat: "Weight Loss", stats: "320 Calories", img: "https://images.pexels.com/photos/675951/pexels-photo-675951.jpeg" },
+        { id: 4, title: "Quinoa Power Bowl", price: 4800, cat: "Weight Loss", stats: "Fiber Rich", img: "https://images.pexels.com/photos/1640772/pexels-photo-1640772.jpeg" }
+    ];
+
+    let cart = [];
+    let currentUser = null;
+    const maxMeals = 5;
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            const cartRef = doc(db, "active_carts", user.uid);
+            const cartSnap = await getDoc(cartRef);
+            if (cartSnap.exists()) {
+                cart = cartSnap.data().items || [];
+                updateUI();
+            }
+            renderMeals();
+        } else {
+            window.location.href = 'login.html';
+        }
+    });
+
+    function renderMeals(filter = 'all') {
+        const grid = document.getElementById('mealGrid');
+        grid.innerHTML = '';
+        const filtered = filter === 'all' ? meals : meals.filter(m => m.cat === filter);
+
+        filtered.forEach(meal => {
+            const isAdded = cart.some(item => item.id === meal.id);
+            grid.innerHTML += `
+                <article class="meal-card">
+                    <img src="${meal.img}" class="card-img" alt="${meal.title}">
+                    <div class="card-body">
+                        <div class="meal-stats">${meal.stats} • ${meal.cat}</div>
+                        <h3 class="meal-title">${meal.title}</h3>
+                        <div class="card-footer">
+                            <span class="price">${meal.price.toLocaleString()}</span>
+                            <button class="add-btn ${isAdded ? 'added' : ''}" onclick="toggleMeal(${meal.id})">
+                                ${isAdded ? 'Added ' : 'Add'}
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            `;
+        });
+    }
+
+    window.toggleMeal = async function(id) {
+        if (!currentUser) return;
+        const meal = meals.find(m => m.id === id);
+        const index = cart.findIndex(item => item.id === id);
+
+        if (index > -1) {
+            cart.splice(index, 1);
+        } else {
+            if (cart.length >= maxMeals) return alert("Plan limit reached!");
+            cart.push(meal);
+        }
+
+        await setDoc(doc(db, "active_carts", currentUser.uid), {
+            items: cart,
+            lastUpdated: new Date()
+        });
+        
+        updateUI();
+        renderMeals(document.querySelector('.chip.active').dataset.filter);
+    };
+
+    function updateUI() {
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+        document.getElementById('totalPriceDisplay').innerText = `${total.toLocaleString()}`;
+        document.getElementById('mealCounter').innerText = `${cart.length}/${maxMeals} Meals `;
+    }
+
+    document.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelector('.chip.active').classList.remove('active');
+            chip.classList.add('active');
+            renderMeals(chip.dataset.filter);
+        });
+    });
+
+    window.goToCheckout = function() {
+        if (cart.length === 0) return alert("Select a meal to continue!");
+        window.location.href = 'checkout.html';
+    };
+</script>
+</body>
+</html>

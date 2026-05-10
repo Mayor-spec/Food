@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | Nourish.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #10b981; --bg: #0a0a0a; --card-bg: #161616; --text-main: #ffffff; --border: rgba(255, 255, 255, 0.08); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); padding-bottom: 50px; }
+
+        .navbar { position: sticky; top: 0; background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 1.2rem 1.5rem; z-index: 100; }
+        .nav-container { max-width: 1200px; margin: auto; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-weight: 800; color: var(--primary); text-decoration: none; font-size: 1.4rem; }
+
+        .container { max-width: 500px; margin: 3rem auto; padding: 0 1.5rem; }
+        h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 2rem; }
+
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 0.5rem; }
+        input, select { 
+            width: 100%; background: var(--card-bg); border: 1px solid var(--border); 
+            padding: 1rem; border-radius: 14px; color: #fff; font-size: 1rem; outline: none;
+        }
+        input:focus { border-color: var(--primary); }
+
+        .save-btn { 
+            width: 100%; background: var(--primary); color: #000; border: none; 
+            padding: 1.2rem; border-radius: 16px; font-weight: 800; cursor: pointer; margin-top: 1rem;
+        }
+        .message { text-align: center; font-size: 0.8rem; margin-top: 1rem; display: none; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="menu.html" class="logo">Nourish.</a>
+        <a href="profile.html" style="color: #fff; text-decoration: none; font-size: 0.9rem; font-weight: 600;">Back to Profile</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h1>Account Settings</h1>
+    
+    <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="fullName" placeholder="Your Name">
+    </div>
+
+    <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="phoneNumber" placeholder="080 000 0000">
+    </div>
+
+    <div class="form-group">
+        <label>Health Goal</label>
+        <select id="healthGoal">
+            <option value="Weight Loss">Weight Loss</option>
+            <option value="Muscle Gain">Muscle Gain</option>
+            <option value="Maintenance">Maintenance</option>
+        </select>
+    </div>
+
+    <button class="save-btn" id="saveBtn">Save Changes</button>
+    <p id="statusMsg" class="message"></p>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = { /* Your Config Here */ };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let userDocRef;
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            userDocRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(userDocRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('fullName').value = data.fullName || '';
+                document.getElementById('phoneNumber').value = data.phone || '';
+                document.getElementById('healthGoal').value = data.goal || 'Weight Loss';
+            }
+        } else {
+            window.location.href = 'login.html';
+        }
+    });
+
+    document.getElementById('saveBtn').onclick = async () => {
+        const btn = document.getElementById('saveBtn');
+        const msg = document.getElementById('statusMsg');
+        
+        btn.innerText = "Saving...";
+        
+        try {
+            await updateDoc(userDocRef, {
+                fullName: document.getElementById('fullName').value,
+                phone: document.getElementById('phoneNumber').value,
+                goal: document.getElementById('healthGoal').value
+            });
+            msg.innerText = "Settings updated successfully! ";
+            msg.style.display = "block";
+            msg.style.color = "#10b981";
+        } catch (e) {
+            msg.innerText = "Error updating settings.";
+            msg.style.display = "block";
+            msg.style.color = "#ef4444";
+        } finally {
+            btn.innerText = "Save Changes";
+        }
+    };
+</script>
+</body>
+</html>

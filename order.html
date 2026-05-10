@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders | Nourish.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --bg: #0a0a0a;
+            --card-bg: #161616;
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); line-height: 1.6; padding: 1.5rem; }
+
+        .container { max-width: 600px; margin: 2rem auto; }
+        
+        .header { margin-bottom: 3rem; display: flex; justify-content: space-between; align-items: center; }
+        .logo { color: var(--primary); font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; text-decoration: none; }
+        h1 { font-size: 2rem; font-weight: 800; }
+
+        .order-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .order-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+        }
+
+        .order-id { font-weight: 800; color: var(--primary); font-size: 0.9rem; }
+        .order-date { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+
+        .item-list { margin-bottom: 1rem; }
+        .item-name { font-weight: 600; font-size: 1rem; color: var(--text-main); margin-bottom: 4px; }
+
+        .order-footer { display: flex; justify-content: space-between; align-items: center; }
+        .status-badge {
+            background: rgba(16, 185, 129, 0.1); color: var(--primary);
+            padding: 4px 12px; border-radius: 100px;
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+        }
+        .total-price { font-weight: 800; font-size: 1.2rem; }
+        .empty-state { text-align: center; margin-top: 5rem; color: var(--text-muted); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="header">
+        <a href="menu.html" class="logo">Nourish.</a>
+        <h1>History</h1>
+    </header>
+
+    <div id="ordersContainer">
+        <p class="empty-state">Fetching your meals...</p>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDXKfriOdq5GS5Zhrl5hLuLXgimTInYsGE",
+    authDomain: "nourishng-bd7f0.firebaseapp.com",
+    projectId: "nourishng-bd7f0",
+    storageBucket: "nourishng-bd7f0.firebasestorage.app",
+    messagingSenderId: "942159491218",
+    appId: "1:942159491218:web:fea17421d2dacae73ff64b"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const ordersContainer = document.getElementById('ordersContainer');
+
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        try {
+            // ORDERBY REMOVED: This works instantly without needing a composite index
+            const q = query(
+                collection(db, "orders"),
+                where("userId", "==", user.uid)
+            );
+
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                ordersContainer.innerHTML = '<div class="empty-state">No orders found. Time to eat! 🍲</div>';
+                return;
+            }
+
+            ordersContainer.innerHTML = querySnapshot.docs.map(doc => {
+                const order = doc.data();
+                
+                // Format date safely
+                let dateStr = "Recently";
+                if(order.createdAt) {
+                    dateStr = order.createdAt.toDate().toLocaleDateString('en-NG', {
+                        day: 'numeric', month: 'short'
+                    });
+                }
+
+                return `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <span class="order-id">#${doc.id.slice(0, 8).toUpperCase()}</span>
+                            <span class="order-date">${dateStr}</span>
+                        </div>
+                        <div class="item-list">
+                            ${order.items.map(item => `<div class="item-name">🥗 ${item.title}</div>`).join('')}
+                        </div>
+                        <div class="order-footer">
+                            <div class="status-badge">${order.status || 'Paid'}</div>
+                            <div class="total-price">₦${order.totalPaid.toLocaleString()}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+        } catch (error) {
+            console.error("Error:", error);
+            ordersContainer.innerHTML = '<div class="empty-state">Something went wrong. Please refresh.</div>';
+        }
+    } else {
+        window.location.href = 'login.html';
+    }
+});
+</script>
+
+</body>
+</html>
